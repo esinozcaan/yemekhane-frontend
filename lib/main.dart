@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yemekhane_app/routes/routes.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,16 +11,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'YemekhaneApp',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return GlobalLoaderOverlay(
+      child: MaterialApp.router(
+        title: 'YemekhaneApp',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        builder: (BuildContext context, Widget? child) {
+          return child!;
+        },
+        routerConfig: router,
       ),
-      builder: (BuildContext context, Widget? child) {
-        return child!;
-      },
-      routerConfig: router,
     );
   }
 }

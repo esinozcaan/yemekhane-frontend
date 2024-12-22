@@ -11,6 +11,16 @@ class UploadMediaResult {
     );
   }
 
+  get items => null;
+
+  get counts => null;
+
+  get inferenceTime => null;
+
+  get price => null;
+
+  get calories => null;
+
   Map<String, dynamic> toJson() {
     return {
       'class': className,

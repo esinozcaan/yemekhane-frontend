@@ -16,7 +16,7 @@ dependencies:
   camerawesome: ^2.1.0
   dio: ^5.7.0
   http_parser: ^4.1.1
-
+  loader_overlay:
 
   cupertino_icons: ^1.0.8
 

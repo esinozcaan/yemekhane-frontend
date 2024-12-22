@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
@@ -20,7 +21,7 @@ class FileUploadService {
   }
 
   /// Ortak dosya yükleme fonksiyonu
-  Future<UploadMediaResult?> uploadFile(File file) async {
+  Future<Map<String, int>?> uploadFile(File file) async {
     try {
       final formData = FormData.fromMap({
         "file": await MultipartFile.fromFile(
@@ -29,7 +30,7 @@ class FileUploadService {
       });
 
       Response response = await _dio.post(
-        "http://192.168.158.47:3001/predict",
+        "http://192.168.1.25:3001/predict",
         data: formData,
         options: Options(
           headers: {'Content-Type': 'multipart/form-data', 'Accept': '*/*'},
@@ -38,7 +39,12 @@ class FileUploadService {
 
       // Gelen yanıtı UploadMediaResult modeline dönüştür
       if (response.statusCode == 200 && response.data != null) {
-        return UploadMediaResult.fromJson(response.data);
+        Map<String, dynamic> decodedResponse = response.data;
+
+        Map<String, int> detectionsMap =
+            Map<String, int>.from(decodedResponse['detections']);
+
+        return detectionsMap;
       } else {
         print("Hata: ${response.statusCode} - ${response.statusMessage}");
         return null;

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:yemekhane_app/core/models/upload_media_result.dart';
 import 'package:yemekhane_app/core/strings.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 import '../core/repository/file_upload_service.dart';
 
@@ -57,15 +58,20 @@ class _HomeScreenState extends State<HomeScreen> {
         final pickedFile =
             await imagePicker.pickImage(source: ImageSource.gallery);
         if (pickedFile != null) {
+          context.loaderOverlay.show();
           print(pickedFile.name);
-          UploadMediaResult? result =
+          Map<String, int>? result =
               await fileUploadService.uploadFile(File(pickedFile.path));
-          context.push("/detail", extra: result);
+          context.loaderOverlay.hide();
+          if (result != null) {
+            context.push("/detail", extra: result);
+          }
         }
       } else {
         throw Exception(AppStrings.permissionErrText);
       }
     } catch (err) {
+      context.loaderOverlay.hide();
       showDialog(
         context: context,
         builder: (context) {

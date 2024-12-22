@@ -26,7 +26,7 @@ final router = GoRouter(
       path: '/detail',
       name: 'detail',
       builder: (context, state) => DetailScreen(
-        result: state.extra as UploadMediaResult,
+        result: state.extra as Map<String, int>,
       ),
     ),
   ],
