@@ -7,7 +7,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:yemekhane_app/core/models/upload_media_result.dart';
 import 'package:yemekhane_app/core/strings.dart';
 import 'package:loader_overlay/loader_overlay.dart';
-
 import '../core/repository/file_upload_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,77 +17,91 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  var fileUploadService = FileUploadService();
+  final fileUploadService = FileUploadService();
+
+  Future<void> _handlePermissions(Permission permission) async {
+    PermissionStatus status = await permission.request();
+    if (status.isPermanentlyDenied) {
+      throw Exception(AppStrings.permissionErrText);
+    }
+  }
+
   void onTakePhoto() async {
     try {
-      PermissionStatus cameraPerm = await Permission.camera.request();
-      PermissionStatus micPerm = await Permission.microphone.request();
+      // Request permissions for camera and microphone
+      await _handlePermissions(Permission.camera);
+      await _handlePermissions(Permission.microphone);
 
-      if (cameraPerm != PermissionStatus.permanentlyDenied &&
-          micPerm != PermissionStatus.permanentlyDenied) {
-        context.push('/takePhoto');
-      } else {
-        throw Exception(AppStrings.permissionErrText);
-      }
+      // Navigate to the photo capture screen
+      context.push('/takePhoto');
     } catch (err) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return Dialog(
-            child: Container(
-              alignment: Alignment.center,
-              height: 250,
-              width: 250,
-              child: Text(
-                err.toString(),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        },
-      );
+      _showErrorDialog(err.toString());
     }
   }
 
   Future<void> onSelectGallery() async {
     try {
-      PermissionStatus galleryPerm = await Permission.photos.request();
-      if (galleryPerm.isLimited || galleryPerm.isGranted) {
-        final imagePicker = ImagePicker();
-        final pickedFile =
-            await imagePicker.pickImage(source: ImageSource.gallery);
-        if (pickedFile != null) {
-          context.loaderOverlay.show();
-          print(pickedFile.name);
-          Map<String, int>? result =
-              await fileUploadService.uploadFile(File(pickedFile.path));
-          context.loaderOverlay.hide();
-          if (result != null) {
-            context.push("/detail", extra: result);
-          }
+      // Request permission for gallery access
+      await _handlePermissions(Permission.photos);
+
+      final imagePicker = ImagePicker();
+      final pickedFile =
+          await imagePicker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        context.loaderOverlay.show(); // Show loading indicator
+
+        ResponseModel? result =
+            await fileUploadService.uploadFile(File(pickedFile.path));
+
+        context.loaderOverlay.hide(); // Hide loading indicator
+
+        if (result != null) {
+          // Navigate to the detail screen with the backend response
+          context.push("/detail", extra: result);
+        } else {
+          throw Exception("Galeri seçimi sırasında bir hata oluştu.");
         }
-      } else {
-        throw Exception(AppStrings.permissionErrText);
       }
     } catch (err) {
-      context.loaderOverlay.hide();
-      showDialog(
-        context: context,
-        builder: (context) {
-          return Dialog(
-            child: Container(
-              alignment: Alignment.center,
-              height: 250,
-              width: 250,
-              child: Text(
-                err.toString(),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        },
-      );
+      context.loaderOverlay.hide(); // Ensure loader is hidden
+      _showErrorDialog(err.toString());
     }
+  }
+
+  void _showErrorDialog(String errorMessage) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            alignment: Alignment.center,
+            height: 250,
+            width: 250,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Hata',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  errorMessage,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Tamam'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -135,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     AppStrings.welcome,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,

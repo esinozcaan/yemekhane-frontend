@@ -4,6 +4,7 @@ import 'package:camerawesome/camerawesome_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loader_overlay/loader_overlay.dart';
+import 'package:yemekhane_app/core/models/upload_media_result.dart';
 import 'package:yemekhane_app/core/repository/file_upload_service.dart';
 
 class TakePhotoScreen extends StatefulWidget {
@@ -14,47 +15,74 @@ class TakePhotoScreen extends StatefulWidget {
 }
 
 class _TakePhotoScreenState extends State<TakePhotoScreen> {
-  var fileUploadService = FileUploadService();
+  final fileUploadService = FileUploadService();
 
-  void takePhoto(PhotoCameraState state) async {
+  Future<void> takePhoto(PhotoCameraState state) async {
     await state.takePhoto().then((value) async {
       try {
-        context.loaderOverlay.show();
+        context.loaderOverlay.show(); // Show loading indicator
 
-        Map<String, int>? result =
+        // Upload the captured photo file
+        ResponseModel? result =
             await fileUploadService.uploadFile(File(value.path!));
-        context.loaderOverlay.hide();
+
+        context.loaderOverlay.hide(); // Hide loading indicator
+
         if (result != null) {
+          // Navigate to DetailScreen with the backend response
           context.push("/detail", extra: result);
         } else {
-          throw Exception("Fotoğraf yüklenirken hata oluştu.");
+          throw Exception("Fotoğraf yüklenirken bir hata oluştu.");
         }
       } catch (err) {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return Dialog(
-              child: Container(
-                alignment: Alignment.center,
-                height: 250,
-                width: 250,
-                child: Text(
-                  err.toString(),
+        context.loaderOverlay.hide(); // Ensure loader is hidden
+        _showErrorDialog(err.toString());
+      }
+    }).catchError((err) {
+      _showErrorDialog(err.toString());
+    });
+  }
+
+  void _showErrorDialog(String errorMessage) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            alignment: Alignment.center,
+            height: 250,
+            width: 250,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Hata',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  errorMessage,
                   textAlign: TextAlign.center,
                 ),
-              ),
-            );
-          },
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Tamam'),
+                ),
+              ],
+            ),
+          ),
         );
-      }
-    });
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kamera'),
+        title: const Text('Kamera'),
         centerTitle: false,
       ),
       body: CameraAwesomeBuilder.awesome(

@@ -25,9 +25,16 @@ final router = GoRouter(
     GoRoute(
       path: '/detail',
       name: 'detail',
-      builder: (context, state) => DetailScreen(
-        result: state.extra as Map<String, int>,
-      ),
+      builder: (context, state) {
+        // Ensure `state.extra` is a `ResponseModel` instance
+        final result = state.extra as ResponseModel?;
+        if (result == null) {
+          return const Center(
+            child: Text('No data available.'),
+          );
+        }
+        return DetailScreen(result: result);
+      },
     ),
   ],
 );
